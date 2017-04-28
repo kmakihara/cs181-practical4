@@ -19,7 +19,7 @@ class Learner(object):
         self.last_state  = None
         self.last_action = None
         self.last_reward = None
-        self.gamma = 0.9
+        self.gamma = 0.8
         self.eta = 0.2
         self.epsilon = 0.1
         self.jump_Qs = Counter()
@@ -46,32 +46,30 @@ class Learner(object):
         if self.last_action and self.last_reward != -10 and self.last_action == 0:
             self.gravity = state["monkey"]["vel"] - self.last_state["monkey"]["vel"]
 
-        tree_dist = state["tree"]["dist"]/50
-        tree_bot = state["tree"]["bot"]/50
-        monkey_bot = state["monkey"]["bot"]/50
+        tree_dist = (state["tree"]["dist"] + 115)/25
+        tree_space = (state["monkey"]["bot"] - state["tree"]["bot"] + 50)/25
 
-        swing_Q = self.swing_Qs[tree_dist, tree_bot, monkey_bot, self.gravity]
-        jump_Q = self.jump_Qs[tree_dist, tree_bot, monkey_bot, self.gravity]
+        swing_Q = self.swing_Qs[tree_dist, tree_space, self.gravity]
+        jump_Q = self.jump_Qs[tree_dist, tree_space, self.gravity]
+        print len(self.swing_Qs)
 
         if self.last_state:
-            last_tree_dist = self.last_state["tree"]["dist"]/50
-            last_tree_bot = self.last_state["tree"]["bot"]/50
-            last_monkey_bot = self.last_state["monkey"]["bot"]/50
+            last_tree_dist = (self.last_state["tree"]["dist"] + 150)/25
+            last_tree_space = (self.last_state["monkey"]["bot"] - self.last_state["tree"]["bot"]+ 50)/25
 
-            last_swing_Q = self.swing_Qs[last_tree_dist, last_tree_bot, last_monkey_bot, self.gravity]
-            last_jump_Q = self.jump_Qs[last_tree_dist, last_tree_bot, last_monkey_bot, self.gravity]
+            last_swing_Q = self.swing_Qs[last_tree_dist, last_tree_space, self.gravity]
+            last_jump_Q = self.jump_Qs[last_tree_dist, last_tree_space, self.gravity]
 
             if self.last_reward == -10:
                 target = self.last_reward
             else:
                 target = self.last_reward + self.gamma * max(swing_Q, jump_Q)
 
-            print last_swing_Q - target
             new_swing_Q = (1 - self.eta) * last_swing_Q + self.eta * target
             new_jump_Q = (1 - self.eta) * last_jump_Q + self.eta * target
 
-            self.swing_Qs[last_tree_dist, last_tree_bot, last_monkey_bot, self.gravity] = new_swing_Q
-            self.jump_Qs[last_tree_dist, last_tree_bot, last_monkey_bot, self.gravity] = new_jump_Q
+            self.swing_Qs[last_tree_dist, last_tree_space, self.gravity] = new_swing_Q
+            self.jump_Qs[last_tree_dist, last_tree_space, self.gravity] = new_jump_Q
 
         action = np.argmax([swing_Q, jump_Q])
 
